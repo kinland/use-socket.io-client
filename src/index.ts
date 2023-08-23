@@ -5,7 +5,13 @@ import {
   useState,
 } from 'react';
 
-import io, { type Socket } from 'socket.io-client';
+import io, {
+  ManagerOptions,
+  type Socket,
+  SocketOptions,
+} from 'socket.io-client';
+
+type IoArgs = Parameters<typeof io>;
 
 type SocketDetails = {
     socket: Socket;
@@ -15,7 +21,8 @@ type SocketDetails = {
 
 let socketDetails = {} as Record<string, SocketDetails>;
 
-function getSocket(args: Parameters<typeof io>, setConnected: React.Dispatch<React.SetStateAction<boolean>>, setTransport: React.Dispatch<React.SetStateAction<string>>): Socket {
+function getSocket(uri: string | undefined, options: Partial<ManagerOptions & SocketOptions>, setConnected: React.Dispatch<React.SetStateAction<boolean>>, setTransport: React.Dispatch<React.SetStateAction<string>>): Socket {
+    const args: IoArgs = uri !== undefined ? [uri, options] : [options];
     const argStr = JSON.stringify(args);
     let socketDetail = socketDetails[argStr];
     if (socketDetail !== undefined) {
@@ -36,7 +43,7 @@ function getSocket(args: Parameters<typeof io>, setConnected: React.Dispatch<Rea
     });
     socket = socket.on('disconnect', () => {
         connectedUpdateHandler();
-        transportUpdateHandler({name: 'polling'});
+        transportUpdateHandler({name: options.transports?.[0] ?? 'polling'});
     });
 
     socketDetails[argStr] = {
@@ -48,18 +55,23 @@ function getSocket(args: Parameters<typeof io>, setConnected: React.Dispatch<Rea
     return socket;
 }
 
-const useSocket = (...args: Parameters<typeof io>): [null, false, ''] | [Socket, boolean, string] => {
+const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
     const [isComponentMounted, setIsComponentMounted] = useState(false);
     useEffect(() => setIsComponentMounted(true), []);
 
     const [connected, setConnected] = useState(false);
     const [transport, setTransport] = useState('polling');
 
+    const [uri, options] = typeof args[0] === 'string'
+        ? [args[0], args[1] ?? {}]
+        : [undefined, args[0] ?? {}];
+
+    // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
+    options.autoConnect = isComponentMounted && (options.autoConnect ?? true)
+
     const socket = getSocket(
-        // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
-        typeof args[0] === 'string'
-            ? [args[0], {...args[1], autoConnect: isComponentMounted && (args[1]?.autoConnect ?? true)}]
-            : [{...args[0], autoConnect: isComponentMounted && (args[0]?.autoConnect ?? true)}],
+        uri,
+        options,
         setConnected,
         setTransport
     );

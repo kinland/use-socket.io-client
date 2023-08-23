@@ -2,7 +2,8 @@
 import { useEffect, useState, } from 'react';
 import io from 'socket.io-client';
 let socketDetails = {};
-function getSocket(args, setConnected, setTransport) {
+function getSocket(uri, options, setConnected, setTransport) {
+    const args = uri !== undefined ? [uri, options] : [options];
     const argStr = JSON.stringify(args);
     let socketDetail = socketDetails[argStr];
     if (socketDetail !== undefined) {
@@ -20,8 +21,9 @@ function getSocket(args, setConnected, setTransport) {
         connectedUpdateHandler();
     });
     socket = socket.on('disconnect', () => {
+        var _a, _b;
         connectedUpdateHandler();
-        transportUpdateHandler({ name: 'polling' });
+        transportUpdateHandler({ name: (_b = (_a = options.transports) === null || _a === void 0 ? void 0 : _a[0]) !== null && _b !== void 0 ? _b : 'polling' });
     });
     socketDetails[argStr] = {
         socket,
@@ -31,16 +33,17 @@ function getSocket(args, setConnected, setTransport) {
     return socket;
 }
 const useSocket = (...args) => {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d;
     const [isComponentMounted, setIsComponentMounted] = useState(false);
     useEffect(() => setIsComponentMounted(true), []);
     const [connected, setConnected] = useState(false);
     const [transport, setTransport] = useState('polling');
-    const socket = getSocket(
+    const [uri, options] = typeof args[0] === 'string'
+        ? [args[0], (_a = args[1]) !== null && _a !== void 0 ? _a : {}]
+        : [undefined, (_b = args[0]) !== null && _b !== void 0 ? _b : {}];
     // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
-    typeof args[0] === 'string'
-        ? [args[0], Object.assign(Object.assign({}, args[1]), { autoConnect: isComponentMounted && ((_b = (_a = args[1]) === null || _a === void 0 ? void 0 : _a.autoConnect) !== null && _b !== void 0 ? _b : true) })]
-        : [Object.assign(Object.assign({}, args[0]), { autoConnect: isComponentMounted && ((_d = (_c = args[0]) === null || _c === void 0 ? void 0 : _c.autoConnect) !== null && _d !== void 0 ? _d : true) })], setConnected, setTransport);
+    options.autoConnect = isComponentMounted && ((_c = options.autoConnect) !== null && _c !== void 0 ? _c : true);
+    const socket = getSocket(uri, options, setConnected, setTransport);
     console.log("RERENDER 1");
     useEffect(() => {
         if (isComponentMounted) {
@@ -65,8 +68,8 @@ const useSocket = (...args) => {
                 setTransport(currentTransport);
             }
         }
-    }, [isComponentMounted, socket, socket.connected, (_e = socket.io.engine) === null || _e === void 0 ? void 0 : _e.transport.name]);
+    }, [isComponentMounted, socket, socket.connected, (_d = socket.io.engine) === null || _d === void 0 ? void 0 : _d.transport.name]);
     return [socket, connected, transport];
 };
 export default useSocket;
-export { getSocket, useSocket };
+export { useSocket };

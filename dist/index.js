@@ -2,7 +2,8 @@
 import { useEffect, useState, } from 'react';
 import io from 'socket.io-client';
 let socketDetails = {};
-function getSocket(uri, options, setConnected, setTransport) {
+function getSocket(isComponentMounted, uri, options, setConnected, setTransport) {
+    var _a;
     const args = uri !== undefined ? [uri, options] : [options];
     const argStr = JSON.stringify(args);
     let socketDetail = socketDetails[argStr];
@@ -11,7 +12,9 @@ function getSocket(uri, options, setConnected, setTransport) {
         socketDetail.setTransport = setTransport;
         return socketDetail.socket;
     }
-    console.log("RECREATING SOCKET!?");
+    // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
+    options.autoConnect = isComponentMounted && ((_a = options.autoConnect) !== null && _a !== void 0 ? _a : true);
+    console.log(`RECREATING SOCKET!? ${isComponentMounted}`);
     let socket = io(...args);
     const connectedUpdateHandler = () => socketDetails[argStr].setConnected(socket.connected);
     const transportUpdateHandler = (transport) => socketDetails[argStr].setTransport(transport.name);
@@ -25,15 +28,17 @@ function getSocket(uri, options, setConnected, setTransport) {
         connectedUpdateHandler();
         transportUpdateHandler({ name: (_b = (_a = options.transports) === null || _a === void 0 ? void 0 : _a[0]) !== null && _b !== void 0 ? _b : 'polling' });
     });
-    socketDetails[argStr] = {
-        socket,
-        setConnected,
-        setTransport
-    };
+    if (isComponentMounted) {
+        socketDetails[argStr] = {
+            socket,
+            setConnected,
+            setTransport
+        };
+    }
     return socket;
 }
 const useSocket = (...args) => {
-    var _a, _b, _c, _d;
+    var _a, _b, _c;
     const [isComponentMounted, setIsComponentMounted] = useState(false);
     useEffect(() => setIsComponentMounted(true), []);
     const [connected, setConnected] = useState(false);
@@ -41,34 +46,37 @@ const useSocket = (...args) => {
     const [uri, options] = typeof args[0] === 'string'
         ? [args[0], (_a = args[1]) !== null && _a !== void 0 ? _a : {}]
         : [undefined, (_b = args[0]) !== null && _b !== void 0 ? _b : {}];
-    // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
-    options.autoConnect = isComponentMounted && ((_c = options.autoConnect) !== null && _c !== void 0 ? _c : true);
-    const socket = getSocket(uri, options, setConnected, setTransport);
+    // const args2: IoArgs = uri !== undefined ? [uri, options] : [options];
+    // console.log({argStr: JSON.stringify(args), argStrRe: {};
+    const socket = getSocket(isComponentMounted, uri, options, setConnected, setTransport);
     console.log("RERENDER 1");
     useEffect(() => {
         if (isComponentMounted) {
             console.log("RERENDER 2");
             return () => {
+                const argStr = JSON.stringify(args);
+                console.log(`Cleaning up ${argStr}`);
                 socket && socket.removeAllListeners();
                 socket && socket.close();
+                delete socketDetails[argStr];
             };
         }
     }, [isComponentMounted, socket]);
     useEffect(() => {
         var _a, _b, _c, _d;
         if (isComponentMounted) {
-            console.log(`RERENDER 3 ${connected}!==${socket.connected}, ${transport}===${(_b = (_a = socket.io.engine) === null || _a === void 0 ? void 0 : _a.transport.name) !== null && _b !== void 0 ? _b : 'polling'}`);
+            let currentTransport = (_d = (_b = (_a = socket.io.engine) === null || _a === void 0 ? void 0 : _a.transport.name) !== null && _b !== void 0 ? _b : (_c = options.transports) === null || _c === void 0 ? void 0 : _c[0]) !== null && _d !== void 0 ? _d : 'polling';
+            console.log(`RERENDER 3 ${connected}!==${socket.connected}, ${transport}===${currentTransport}`);
             if (connected !== socket.connected) {
                 console.log(`updating connected with ${socket.connected}`);
                 setConnected(socket.connected);
             }
-            let currentTransport = (_d = (_c = socket.io.engine) === null || _c === void 0 ? void 0 : _c.transport.name) !== null && _d !== void 0 ? _d : 'polling';
             if (socket.connected && transport !== currentTransport) {
                 console.log(`updating transport with ${currentTransport}`);
                 setTransport(currentTransport);
             }
         }
-    }, [isComponentMounted, socket, socket.connected, (_d = socket.io.engine) === null || _d === void 0 ? void 0 : _d.transport.name]);
+    }, [isComponentMounted, socket, socket.connected, (_c = socket.io.engine) === null || _c === void 0 ? void 0 : _c.transport.name]);
     return [socket, connected, transport];
 };
 export default useSocket;

@@ -21,7 +21,7 @@ type SocketDetails = {
 
 let socketDetails = {} as Record<string, SocketDetails>;
 
-function getSocket(uri: string | undefined, options: Partial<ManagerOptions & SocketOptions>, setConnected: React.Dispatch<React.SetStateAction<boolean>>, setTransport: React.Dispatch<React.SetStateAction<string>>): Socket {
+function getSocket(isComponentMounted: boolean, uri: string | undefined, options: Partial<ManagerOptions & SocketOptions>, setConnected: React.Dispatch<React.SetStateAction<boolean>>, setTransport: React.Dispatch<React.SetStateAction<string>>): Socket {
     const args: IoArgs = uri !== undefined ? [uri, options] : [options];
     const argStr = JSON.stringify(args);
     let socketDetail = socketDetails[argStr];
@@ -30,7 +30,10 @@ function getSocket(uri: string | undefined, options: Partial<ManagerOptions & So
         socketDetail.setTransport = setTransport;
         return socketDetail.socket;
     }
-    console.log("RECREATING SOCKET!?")
+    // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
+    options.autoConnect = isComponentMounted && (options.autoConnect ?? true)
+
+    console.log(`RECREATING SOCKET!? ${isComponentMounted}`)
     let socket = io(...args);
 
     const connectedUpdateHandler = () => socketDetails[argStr].setConnected(socket.connected);
@@ -46,10 +49,12 @@ function getSocket(uri: string | undefined, options: Partial<ManagerOptions & So
         transportUpdateHandler({name: options.transports?.[0] ?? 'polling'});
     });
 
-    socketDetails[argStr] = {
-        socket,
-        setConnected,
-        setTransport
+    if (isComponentMounted) {
+        socketDetails[argStr] = {
+            socket,
+            setConnected,
+            setTransport
+        }
     }
 
     return socket;
@@ -66,10 +71,8 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
         ? [args[0], args[1] ?? {}]
         : [undefined, args[0] ?? {}];
 
-    // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
-    options.autoConnect = isComponentMounted && (options.autoConnect ?? true)
-
     const socket = getSocket(
+        isComponentMounted,
         uri,
         options,
         setConnected,
@@ -82,20 +85,25 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
         if (isComponentMounted) {
             console.log("RERENDER 2");
             return () => {
+                const argStr = JSON.stringify(args);
+                console.log(`Cleaning up ${argStr}`);
                 socket && socket.removeAllListeners();
                 socket && socket.close();
+                delete socketDetails[argStr];
             };
         }
     }, [isComponentMounted, socket]);
 
     useEffect(() => {
         if (isComponentMounted) {
-            console.log(`RERENDER 3 ${connected}!==${socket.connected}, ${transport}===${socket.io.engine?.transport.name ?? 'polling'}`);
+            let currentTransport = socket.io.engine?.transport.name ?? options.transports?.[0] ?? 'polling';
+
+            console.log(`RERENDER 3 ${connected}!==${socket.connected}, ${transport}===${currentTransport}`);
             if (connected !== socket.connected) {
                 console.log(`updating connected with ${socket.connected}`)
                 setConnected(socket.connected);
             }
-            let currentTransport = socket.io.engine?.transport.name ?? 'polling';
+            
             if (socket.connected && transport !== currentTransport) {
                 console.log(`updating transport with ${currentTransport}`)
                 setTransport(currentTransport);

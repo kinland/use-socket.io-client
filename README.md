@@ -10,7 +10,7 @@ socket = io('ws://host:port');
 
 //Now, you could easily write this inside the body of a function component:
 import useSocket from 'use-socket.io-client';
-const [socket] = useSocket('ws://host:port')
+const [socket, connected] = useSocket('ws://host:port')
 ```
 
 ## Installation
@@ -24,7 +24,7 @@ $ npm i use-socket.io-client
 import useSocket from 'use-socket.io-client';
 
 //You can treat "useSocket" as "io"
-const [socket] = useSocket('ws://localhost:8080',{
+const [socket, connected] = useSocket('ws://localhost:8080',{
     autoConnect: false,
     //any other options
   });

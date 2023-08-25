@@ -33,14 +33,12 @@ function getSocket(isComponentMounted: boolean, uri: string | undefined, options
     // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
     options.autoConnect = isComponentMounted && (options.autoConnect ?? true)
 
-    console.log(`RECREATING SOCKET!? ${isComponentMounted}`)
     let socket = io(...args);
 
     const connectedUpdateHandler = () => socketDetails[argStr].setConnected(socket.connected);
     const transportUpdateHandler = (transport: {name: string}) => socketDetails[argStr].setTransport(transport.name);
     
     socket = socket.on('connect', () => {
-        console.log("got connect")
         socket.io.engine.once('upgrade', transportUpdateHandler);
         connectedUpdateHandler();
     });
@@ -79,14 +77,11 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
         setTransport
     );
 
-    console.log("RERENDER 1")
-
     useEffect(() => {
         if (isComponentMounted) {
-            console.log("RERENDER 2");
             return () => {
                 const argStr = JSON.stringify(args);
-                console.log(`Cleaning up ${argStr}`);
+                console.log(`Cleaning up socket ${argStr}`);
                 socket && socket.removeAllListeners();
                 socket && socket.close();
                 delete socketDetails[argStr];
@@ -98,7 +93,6 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
         if (isComponentMounted) {
             let currentTransport = socket.io.engine?.transport.name ?? options.transports?.[0] ?? 'polling';
 
-            console.log(`RERENDER 3 ${connected}!==${socket.connected}, ${transport}===${currentTransport}`);
             if (connected !== socket.connected) {
                 console.log(`updating connected with ${socket.connected}`)
                 setConnected(socket.connected);

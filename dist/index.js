@@ -14,12 +14,10 @@ function getSocket(isComponentMounted, uri, options, setConnected, setTransport)
     }
     // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
     options.autoConnect = isComponentMounted && ((_a = options.autoConnect) !== null && _a !== void 0 ? _a : true);
-    console.log(`RECREATING SOCKET!? ${isComponentMounted}`);
     let socket = io(...args);
     const connectedUpdateHandler = () => socketDetails[argStr].setConnected(socket.connected);
     const transportUpdateHandler = (transport) => socketDetails[argStr].setTransport(transport.name);
     socket = socket.on('connect', () => {
-        console.log("got connect");
         socket.io.engine.once('upgrade', transportUpdateHandler);
         connectedUpdateHandler();
     });
@@ -46,16 +44,12 @@ const useSocket = (...args) => {
     const [uri, options] = typeof args[0] === 'string'
         ? [args[0], (_a = args[1]) !== null && _a !== void 0 ? _a : {}]
         : [undefined, (_b = args[0]) !== null && _b !== void 0 ? _b : {}];
-    // const args2: IoArgs = uri !== undefined ? [uri, options] : [options];
-    // console.log({argStr: JSON.stringify(args), argStrRe: {};
     const socket = getSocket(isComponentMounted, uri, options, setConnected, setTransport);
-    console.log("RERENDER 1");
     useEffect(() => {
         if (isComponentMounted) {
-            console.log("RERENDER 2");
             return () => {
                 const argStr = JSON.stringify(args);
-                console.log(`Cleaning up ${argStr}`);
+                console.log(`Cleaning up socket ${argStr}`);
                 socket && socket.removeAllListeners();
                 socket && socket.close();
                 delete socketDetails[argStr];
@@ -66,7 +60,6 @@ const useSocket = (...args) => {
         var _a, _b, _c, _d;
         if (isComponentMounted) {
             let currentTransport = (_d = (_b = (_a = socket.io.engine) === null || _a === void 0 ? void 0 : _a.transport.name) !== null && _b !== void 0 ? _b : (_c = options.transports) === null || _c === void 0 ? void 0 : _c[0]) !== null && _d !== void 0 ? _d : 'polling';
-            console.log(`RERENDER 3 ${connected}!==${socket.connected}, ${transport}===${currentTransport}`);
             if (connected !== socket.connected) {
                 console.log(`updating connected with ${socket.connected}`);
                 setConnected(socket.connected);

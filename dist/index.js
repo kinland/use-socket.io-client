@@ -1,23 +1,15 @@
 'use client';
-import { createContext, useContext, useEffect, useState, } from 'react';
+import { useEffect, useRef, useState, } from 'react';
 import io from 'socket.io-client';
-const socketIOContext = createContext({ socketDetails: {} });
 function getSocket(isComponentMounted, uri, options, setConnected, setTransport) {
     var _a;
-    const { socketDetails } = useContext(socketIOContext);
     const args = uri !== undefined ? [uri, options] : [options];
     const argStr = JSON.stringify(args);
-    let socketDetail = socketDetails[argStr];
-    if (socketDetail !== undefined) {
-        socketDetail.setConnected = setConnected;
-        socketDetail.setTransport = setTransport;
-        return socketDetail.socket;
-    }
     // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
     options.autoConnect = isComponentMounted && ((_a = options.autoConnect) !== null && _a !== void 0 ? _a : true);
     let socket = io(...args);
-    const connectedUpdateHandler = () => socketDetails[argStr].setConnected(socket.connected);
-    const transportUpdateHandler = (transport) => socketDetails[argStr].setTransport(transport.name);
+    const connectedUpdateHandler = () => setConnected(socket.connected);
+    const transportUpdateHandler = (transport) => setTransport(transport.name);
     socket = socket.on('connect', () => {
         socket.io.engine.once('upgrade', transportUpdateHandler);
         connectedUpdateHandler();
@@ -27,18 +19,10 @@ function getSocket(isComponentMounted, uri, options, setConnected, setTransport)
         connectedUpdateHandler();
         transportUpdateHandler({ name: (_b = (_a = options.transports) === null || _a === void 0 ? void 0 : _a[0]) !== null && _b !== void 0 ? _b : 'polling' });
     });
-    if (isComponentMounted) {
-        socketDetails[argStr] = {
-            socket,
-            setConnected,
-            setTransport
-        };
-    }
     return socket;
 }
 const useSocket = (...args) => {
     var _a, _b, _c;
-    const { socketDetails } = useContext(socketIOContext);
     const [isComponentMounted, setIsComponentMounted] = useState(false);
     useEffect(() => setIsComponentMounted(true), []);
     const [connected, setConnected] = useState(false);
@@ -46,7 +30,7 @@ const useSocket = (...args) => {
     const [uri, options] = typeof args[0] === 'string'
         ? [args[0], (_a = args[1]) !== null && _a !== void 0 ? _a : {}]
         : [undefined, (_b = args[0]) !== null && _b !== void 0 ? _b : {}];
-    const socket = getSocket(isComponentMounted, uri, options, setConnected, setTransport);
+    const { current: socket } = useRef(getSocket(isComponentMounted, uri, options, setConnected, setTransport));
     useEffect(() => {
         if (isComponentMounted) {
             return () => {
@@ -54,7 +38,6 @@ const useSocket = (...args) => {
                 console.log(`Cleaning up socket ${argStr}`);
                 socket && socket.removeAllListeners();
                 socket && socket.close();
-                delete socketDetails[argStr];
             };
         }
     }, [isComponentMounted, socket]);

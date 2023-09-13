@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useRef,
   useState,
 } from 'react';
 
@@ -14,12 +13,6 @@ import io, {
 
 type IoArgs = Parameters<typeof io>;
 
-type SocketDetails = {
-    socket: Socket;
-    setConnected: React.Dispatch<React.SetStateAction<boolean>>;
-    setTransport: React.Dispatch<React.SetStateAction<string>>;
-}
-
 function getSocket(isComponentMounted: boolean, uri: string | undefined, options: Partial<ManagerOptions & SocketOptions>, setConnected: React.Dispatch<React.SetStateAction<boolean>>, setTransport: React.Dispatch<React.SetStateAction<string>>): Socket {
     const args: IoArgs = uri !== undefined ? [uri, options] : [options];
     const argStr = JSON.stringify(args);
@@ -29,7 +22,7 @@ function getSocket(isComponentMounted: boolean, uri: string | undefined, options
     let socket = io(...args);
 
     const connectedUpdateHandler = () => setConnected(socket.connected);
-    const transportUpdateHandler = (transport: {name: string}) => setTransport(transport.name);
+    const transportUpdateHandler = (transport: { name: string }) => setTransport(transport.name);
     
     socket = socket.on('connect', () => {
         socket.io.engine.once('upgrade', transportUpdateHandler);
@@ -54,14 +47,12 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
         ? [args[0], args[1] ?? {}]
         : [undefined, args[0] ?? {}];
 
-    const { current: socket } = useRef(
-        getSocket(
-            isComponentMounted,
-            uri,
-            options,
-            setConnected,
-            setTransport
-        )
+    const socket = getSocket(
+        isComponentMounted,
+        uri,
+        options,
+        setConnected,
+        setTransport
     );
 
     useEffect(() => {

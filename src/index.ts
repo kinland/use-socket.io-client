@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  createContext,
+  useContext,
   useEffect,
   useState,
 } from 'react';
@@ -19,9 +21,10 @@ type SocketDetails = {
     setTransport: React.Dispatch<React.SetStateAction<string>>;
 }
 
-let socketDetails = {} as Record<string, SocketDetails>;
+const socketIOContext = createContext({socketDetails: {} as Record<string, SocketDetails>});
 
 function getSocket(isComponentMounted: boolean, uri: string | undefined, options: Partial<ManagerOptions & SocketOptions>, setConnected: React.Dispatch<React.SetStateAction<boolean>>, setTransport: React.Dispatch<React.SetStateAction<string>>): Socket {
+    const { socketDetails } = useContext(socketIOContext);
     const args: IoArgs = uri !== undefined ? [uri, options] : [options];
     const argStr = JSON.stringify(args);
     let socketDetail = socketDetails[argStr];
@@ -59,6 +62,7 @@ function getSocket(isComponentMounted: boolean, uri: string | undefined, options
 }
 
 const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
+    const { socketDetails } = useContext(socketIOContext);
     const [isComponentMounted, setIsComponentMounted] = useState(false);
     useEffect(() => setIsComponentMounted(true), []);
 

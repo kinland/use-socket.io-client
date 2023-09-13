@@ -1,9 +1,10 @@
 'use client';
-import { useEffect, useState, } from 'react';
+import { createContext, useContext, useEffect, useState, } from 'react';
 import io from 'socket.io-client';
-let socketDetails = {};
+const socketIOContext = createContext({ socketDetails: {} });
 function getSocket(isComponentMounted, uri, options, setConnected, setTransport) {
     var _a;
+    const { socketDetails } = useContext(socketIOContext);
     const args = uri !== undefined ? [uri, options] : [options];
     const argStr = JSON.stringify(args);
     let socketDetail = socketDetails[argStr];
@@ -37,6 +38,7 @@ function getSocket(isComponentMounted, uri, options, setConnected, setTransport)
 }
 const useSocket = (...args) => {
     var _a, _b, _c;
+    const { socketDetails } = useContext(socketIOContext);
     const [isComponentMounted, setIsComponentMounted] = useState(false);
     useEffect(() => setIsComponentMounted(true), []);
     const [connected, setConnected] = useState(false);

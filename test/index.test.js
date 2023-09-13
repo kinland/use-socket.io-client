@@ -13,14 +13,12 @@ import { Server } from 'socket.io';
 import { io as client } from 'socket.io-client';
 
 import {
-    render,
-    screen,
-    waitFor,
+  render,
+  screen,
+  waitFor,
 } from '@testing-library/react';
 
 import useSocket from '../dist/index.js';
-
-// import { expect } from "jest";
 
 describe("Basic Test:", () => {
     test("TestCase1", done => {
@@ -74,6 +72,9 @@ describe("Real-world Test:", () => {
     beforeAll(async () => {
         port = await portfinder.getPortPromise();
         io = new Server(port);
+        io.on('connection', (socket) => {
+            console.log('Client connected');
+        });
     });
 
     afterAll(() => {

@@ -1,16 +1,11 @@
 'use client';
-import { useEffect, useState, } from 'react';
+import { useEffect, useRef, useState, } from 'react';
 import io from 'socket.io-client';
-function getSocket(isComponentMounted, uri, options, setConnected, setTransport) {
-    var _a;
+function getSocket(uri, options, setConnected, setTransport) {
     const args = uri !== undefined ? [uri, options] : [options];
-    const argStr = JSON.stringify(args);
-    // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
-    options.autoConnect = isComponentMounted && ((_a = options.autoConnect) !== null && _a !== void 0 ? _a : true);
+    // if this is running on server / has not mounted yet, this prevents autoConnect even if autoConnect is set to true
+    options.autoConnect = false;
     let socket = io(...args);
-    if (isComponentMounted) {
-        console.log("CREATING");
-    }
     const connectedUpdateHandler = () => setConnected(socket.connected);
     const transportUpdateHandler = (transport) => setTransport(transport.name);
     socket = socket.on('connect', () => {
@@ -24,21 +19,29 @@ function getSocket(isComponentMounted, uri, options, setConnected, setTransport)
     });
     return socket;
 }
-const useSocket = (...args) => {
-    var _a, _b, _c;
+function useSocket(...args) {
+    var _a, _b, _c, _d, _e;
     const [isComponentMounted, setIsComponentMounted] = useState(false);
     useEffect(() => setIsComponentMounted(true), []);
-    const [connected, setConnected] = useState(false);
-    const [transport, setTransport] = useState('polling');
     const [uri, options] = typeof args[0] === 'string'
         ? [args[0], (_a = args[1]) !== null && _a !== void 0 ? _a : {}]
         : [undefined, (_b = args[0]) !== null && _b !== void 0 ? _b : {}];
-    let [socket, setSocket] = useState(getSocket(isComponentMounted, uri, options, setConnected, setTransport));
+    const [connected, setConnected] = useState(false);
+    const [transport, setTransport] = useState((_d = (_c = options.transports) === null || _c === void 0 ? void 0 : _c[0]) !== null && _d !== void 0 ? _d : 'polling');
+    const socketRef = useRef(null);
+    // Prevent calling getSocket more than once
+    if (socketRef.current === null) {
+        socketRef.current = getSocket(uri, options, setConnected, setTransport);
+    }
+    const socket = socketRef.current;
+    const automaticallyConnected = useRef(false);
     useEffect(() => {
-        setSocket(getSocket(isComponentMounted, uri, options, setConnected, setTransport));
-    }, []);
-    useEffect(() => {
+        var _a;
         if (isComponentMounted) {
+            if (!socket.connected && ((_a = options.autoConnect) !== null && _a !== void 0 ? _a : true) && !automaticallyConnected.current) {
+                socket.connect();
+                automaticallyConnected.current = true;
+            }
             return () => {
                 const argStr = JSON.stringify(args);
                 console.log(`Cleaning up socket ${argStr}`);
@@ -49,19 +52,18 @@ const useSocket = (...args) => {
     }, [isComponentMounted]);
     useEffect(() => {
         var _a, _b, _c, _d;
-        if (isComponentMounted) {
-            let currentTransport = (_d = (_b = (_a = socket.io.engine) === null || _a === void 0 ? void 0 : _a.transport.name) !== null && _b !== void 0 ? _b : (_c = options.transports) === null || _c === void 0 ? void 0 : _c[0]) !== null && _d !== void 0 ? _d : 'polling';
-            if (connected !== socket.connected) {
-                console.log(`updating connected with ${socket.connected}`);
-                setConnected(socket.connected);
-            }
-            if (socket.connected && transport !== currentTransport) {
-                console.log(`updating transport with ${currentTransport}`);
-                setTransport(currentTransport);
-            }
+        let currentTransport = (_d = (_b = (_a = socket.io.engine) === null || _a === void 0 ? void 0 : _a.transport.name) !== null && _b !== void 0 ? _b : (_c = options.transports) === null || _c === void 0 ? void 0 : _c[0]) !== null && _d !== void 0 ? _d : 'polling';
+        if (connected !== socket.connected) {
+            console.log(`updating connected with ${socket.connected}`);
+            setConnected(socket.connected);
         }
-    }, [isComponentMounted, socket.connected, (_c = socket.io.engine) === null || _c === void 0 ? void 0 : _c.transport.name]);
+        if (socket.connected && transport !== currentTransport) {
+            console.log(`updating transport with ${currentTransport}`);
+            setTransport(currentTransport);
+        }
+    }, [socket === null || socket === void 0 ? void 0 : socket.connected, (_e = socket === null || socket === void 0 ? void 0 : socket.io.engine) === null || _e === void 0 ? void 0 : _e.transport.name]);
     return [socket, connected, transport];
-};
+}
+;
 export default useSocket;
 export { useSocket };

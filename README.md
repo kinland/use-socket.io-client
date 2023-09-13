@@ -1,4 +1,4 @@
-# use-socket.io-client 
+# use-socket.io-client
 [![Build Status](https://travis-ci.org/iamgyz/use-socket.io-client.svg?branch=master)](https://travis-ci.org/iamgyz/use-socket.io-client)
 
 React(^16.8.0) hook for socket.io-client, manipulate socket.io client without any side effect.
@@ -28,7 +28,7 @@ const [socket, connected] = useSocket('ws://localhost:8080',{
     autoConnect: false,
     //any other options
   });
-  
+
 //connect socket
 socket.connect();
 

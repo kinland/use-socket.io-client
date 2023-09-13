@@ -33,8 +33,10 @@ const useSocket = (...args) => {
     const socketRef = useRef(getSocket(isComponentMounted, uri, options, setConnected, setTransport));
     const socket = socketRef.current;
     useEffect(() => {
+        socketRef.current = getSocket(isComponentMounted, uri, options, setConnected, setTransport);
+    }, []);
+    useEffect(() => {
         if (isComponentMounted) {
-            socketRef.current = getSocket(isComponentMounted, uri, options, setConnected, setTransport);
             return () => {
                 const argStr = JSON.stringify(args);
                 console.log(`Cleaning up socket ${argStr}`);

@@ -60,15 +60,17 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
     const socket = socketRef.current;
 
     useEffect(() => {
-        if (isComponentMounted) {
-            socketRef.current = getSocket(
-                isComponentMounted,
-                uri,
-                options,
-                setConnected,
-                setTransport
-            );
+        socketRef.current = getSocket(
+            isComponentMounted,
+            uri,
+            options,
+            setConnected,
+            setTransport
+        );
+    }, []);
 
+    useEffect(() => {        
+        if (isComponentMounted) {
             return () => {
                 const argStr = JSON.stringify(args);
                 console.log(`Cleaning up socket ${argStr}`);

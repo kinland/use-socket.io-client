@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -47,16 +48,27 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
         ? [args[0], args[1] ?? {}]
         : [undefined, args[0] ?? {}];
 
-    const socket = getSocket(
-        isComponentMounted,
-        uri,
-        options,
-        setConnected,
-        setTransport
+    const socketRef = useRef(
+        getSocket(
+            isComponentMounted,
+            uri,
+            options,
+            setConnected,
+            setTransport
+        )
     );
+    const socket = socketRef.current;
 
     useEffect(() => {
         if (isComponentMounted) {
+            socketRef.current = getSocket(
+                isComponentMounted,
+                uri,
+                options,
+                setConnected,
+                setTransport
+            );
+
             return () => {
                 const argStr = JSON.stringify(args);
                 console.log(`Cleaning up socket ${argStr}`);
@@ -64,7 +76,7 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
                 socket && socket.close();
             };
         }
-    }, [isComponentMounted, socket]);
+    }, [isComponentMounted]);
 
     useEffect(() => {
         if (isComponentMounted) {
@@ -80,9 +92,9 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
                 setTransport(currentTransport);
             }
         }
-    }, [isComponentMounted, socket, socket.connected, socket.io.engine?.transport.name]);
+    }, [isComponentMounted, socket.connected, socket.io.engine?.transport.name]);
 
-    return [socket, connected, transport];
+    return [socketRef.current, connected, transport];
 };
 
 export default useSocket;

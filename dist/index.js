@@ -30,9 +30,11 @@ const useSocket = (...args) => {
     const [uri, options] = typeof args[0] === 'string'
         ? [args[0], (_a = args[1]) !== null && _a !== void 0 ? _a : {}]
         : [undefined, (_b = args[0]) !== null && _b !== void 0 ? _b : {}];
-    const { current: socket } = useRef(getSocket(isComponentMounted, uri, options, setConnected, setTransport));
+    const socketRef = useRef(getSocket(isComponentMounted, uri, options, setConnected, setTransport));
+    const socket = socketRef.current;
     useEffect(() => {
         if (isComponentMounted) {
+            socketRef.current = getSocket(isComponentMounted, uri, options, setConnected, setTransport);
             return () => {
                 const argStr = JSON.stringify(args);
                 console.log(`Cleaning up socket ${argStr}`);
@@ -40,7 +42,7 @@ const useSocket = (...args) => {
                 socket && socket.close();
             };
         }
-    }, [isComponentMounted, socket]);
+    }, [isComponentMounted]);
     useEffect(() => {
         var _a, _b, _c, _d;
         if (isComponentMounted) {
@@ -54,8 +56,8 @@ const useSocket = (...args) => {
                 setTransport(currentTransport);
             }
         }
-    }, [isComponentMounted, socket, socket.connected, (_c = socket.io.engine) === null || _c === void 0 ? void 0 : _c.transport.name]);
-    return [socket, connected, transport];
+    }, [isComponentMounted, socket.connected, (_c = socket.io.engine) === null || _c === void 0 ? void 0 : _c.transport.name]);
+    return [socketRef.current, connected, transport];
 };
 export default useSocket;
 export { useSocket };

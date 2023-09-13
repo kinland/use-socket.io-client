@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useRef,
   useState,
 } from 'react';
 
@@ -48,7 +47,7 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
         ? [args[0], args[1] ?? {}]
         : [undefined, args[0] ?? {}];
 
-    const socketRef = useRef(
+    let [socket, setSocket] = useState(
         getSocket(
             isComponentMounted,
             uri,
@@ -57,19 +56,20 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
             setTransport
         )
     );
-    const socket = socketRef.current;
 
     useEffect(() => {
-        socketRef.current = getSocket(
-            isComponentMounted,
-            uri,
-            options,
-            setConnected,
-            setTransport
+        setSocket(
+            getSocket(
+                isComponentMounted,
+                uri,
+                options,
+                setConnected,
+                setTransport
+            )
         );
     }, []);
 
-    useEffect(() => {        
+    useEffect(() => {
         if (isComponentMounted) {
             return () => {
                 const argStr = JSON.stringify(args);
@@ -96,7 +96,7 @@ const useSocket = (...args: IoArgs): [Socket, boolean, string] => {
         }
     }, [isComponentMounted, socket.connected, socket.io.engine?.transport.name]);
 
-    return [socketRef.current, connected, transport];
+    return [socket, connected, transport];
 };
 
 export default useSocket;

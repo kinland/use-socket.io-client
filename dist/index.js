@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState, } from 'react';
+import { useEffect, useState, } from 'react';
 import io from 'socket.io-client';
 function getSocket(isComponentMounted, uri, options, setConnected, setTransport) {
     var _a;
@@ -8,6 +8,9 @@ function getSocket(isComponentMounted, uri, options, setConnected, setTransport)
     // if this is running on server / has not mounted yet, then don't autoConnect even if autoConnect is set to true
     options.autoConnect = isComponentMounted && ((_a = options.autoConnect) !== null && _a !== void 0 ? _a : true);
     let socket = io(...args);
+    if (isComponentMounted) {
+        console.log("CREATING");
+    }
     const connectedUpdateHandler = () => setConnected(socket.connected);
     const transportUpdateHandler = (transport) => setTransport(transport.name);
     socket = socket.on('connect', () => {
@@ -30,10 +33,9 @@ const useSocket = (...args) => {
     const [uri, options] = typeof args[0] === 'string'
         ? [args[0], (_a = args[1]) !== null && _a !== void 0 ? _a : {}]
         : [undefined, (_b = args[0]) !== null && _b !== void 0 ? _b : {}];
-    const socketRef = useRef(getSocket(isComponentMounted, uri, options, setConnected, setTransport));
-    const socket = socketRef.current;
+    let [socket, setSocket] = useState(getSocket(isComponentMounted, uri, options, setConnected, setTransport));
     useEffect(() => {
-        socketRef.current = getSocket(isComponentMounted, uri, options, setConnected, setTransport);
+        setSocket(getSocket(isComponentMounted, uri, options, setConnected, setTransport));
     }, []);
     useEffect(() => {
         if (isComponentMounted) {
@@ -59,7 +61,7 @@ const useSocket = (...args) => {
             }
         }
     }, [isComponentMounted, socket.connected, (_c = socket.io.engine) === null || _c === void 0 ? void 0 : _c.transport.name]);
-    return [socketRef.current, connected, transport];
+    return [socket, connected, transport];
 };
 export default useSocket;
 export { useSocket };

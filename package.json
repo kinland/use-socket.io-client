@@ -1,51 +1,51 @@
 {
-  "name": "use-socket.io-client",
-  "version": "1.1.0",
-  "description": "React hook for socket.io client, manipulate without any side effect.",
-  "main": "src/index.js",
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest test/*.js"
-  },
-  "peerDependencies": {
-    "react": "^16.8.0",
-    "react-dom": "^16.8.0"
-  },
-  "author": "@iamgyz",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/iamgyz/use-socket.io-client"
-  },
-  "keywords": [
-    "socket.io",
-    "websocket",
-    "socket",
-    "react",
-    "hooks",
-    "react-hooks",
-    "useEffect"
-  ],
-  "license": "MIT",
-  "dependencies": {
-    "await-sync": "^1.0.3",
-    "socket.io-client": "^4.7.2"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.22.10",
-    "@babel/preset-env": "^7.22.10",
-    "@babel/preset-react": "^7.22.5",
-    "@testing-library/jest-dom": "^6.0.1",
-    "@testing-library/react": "^14.0.0",
-    "@types/react": "^18.2.21",
-    "@types/react-dom": "^18.2.7",
-    "core-js": "^3.32.1",
-    "jest": "^29.6.3",
-    "jest-environment-jsdom": "^29.6.3",
-    "portfinder": "^1.0.32",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "socket.io": "^4.7.2",
-    "typescript": "^5.1.6"
-  }
+    "name": "use-socket.io-client",
+    "version": "1.1.0",
+    "description": "React hook for socket.io client, manipulate without any side effect.",
+    "main": "src/index.js",
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "test": "NODE_OPTIONS=--experimental-vm-modules jest test/*.js"
+    },
+    "author": "@iamgyz",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/iamgyz/use-socket.io-client"
+    },
+    "keywords": [
+        "socket.io",
+        "websocket",
+        "socket",
+        "react",
+        "hooks",
+        "react-hooks",
+        "useEffect"
+    ],
+    "license": "MIT",
+    "dependencies": {
+        "await-sync": "^1.0.3",
+        "socket.io-client": "^4.7.2"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.22.10",
+        "@babel/preset-env": "^7.22.10",
+        "@babel/preset-react": "^7.22.5",
+        "@testing-library/jest-dom": "^6.0.1",
+        "@testing-library/react": "^14.0.0",
+        "@types/react": "^18.2.21",
+        "@types/react-dom": "^18.2.7",
+        "core-js": "^3.32.1",
+        "jest": "^29.6.3",
+        "jest-environment-jsdom": "^29.6.3",
+        "portfinder": "^1.0.32",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "socket.io": "^4.7.2",
+        "typescript": "^5.1.6"
+    },
+    "peerDependencies": {
+        "react": ">= 16.8.x",
+        "react-dom": ">= 16.8.x"
+    }
 }
